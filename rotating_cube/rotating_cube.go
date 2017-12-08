@@ -88,69 +88,67 @@ func run(projection bool) {
 
 	tg.Clear(tg.ColorRed|tg.AttrBold, tg.ColorBlack|tg.AttrBold)
 
+	eventQueue := make(chan tg.Event)
+	go func() {
+		for {
+			eventQueue <- tg.PollEvent()
+		}
+	}()
+	drawTick := time.NewTicker(50 * time.Millisecond)
+
 	angleX, angleY, angleZ := 0.0, 0.0, 0.0
 	c := NewCanvas()
 	for {
-		//for rounds := 0; rounds < 1000; rounds++ {
-
-		// Will hold transformed vertices.
-		t = []Point3D{}
-
-		for _, v := range vertices {
-			// Rotate the point around X axis, then around Y axis, and finally around Z axis.
-			p = &v
-			p = p.RotateX(angleX)
-			p = p.RotateY(angleY)
-			p = p.RotateZ(angleZ)
-			if projection {
-				// Transform the point from 3D to 2D
-				p = p.Project(50, 50, 50, 50)
+		select {
+		case ev := <-eventQueue:
+			if ev.Type == tg.EventKey && ev.Key == tg.KeyEsc {
+				return
 			}
-			// Put the point in the list of transformed vertices
-			t = append(t, *p)
-		}
+		case <-drawTick.C:
 
-		for _, f := range faces {
-			c.DrawLine(t[f[0]].x, t[f[0]].y, t[f[1]].x, t[f[1]].y)
-			c.DrawLine(t[f[1]].x, t[f[1]].y, t[f[2]].x, t[f[2]].y)
-			c.DrawLine(t[f[2]].x, t[f[2]].y, t[f[3]].x, t[f[3]].y)
-			c.DrawLine(t[f[3]].x, t[f[3]].y, t[f[0]].x, t[f[0]].y)
-		}
+			// Will hold transformed vertices.
+			t = []Point3D{}
 
-		f := c.Frame(-40, -40, 80, 80)
-
-		//stdscr.AddStr(0, 0, '{0}\n'.format(f))
-		xoffset := 2
-		for y, line := range strings.Split(f, "\n") {
-			pos := 0
-			for _, r := range line { // iterates over runes, not positions
-				tg.SetCell(xoffset+pos, y, r, tg.ColorRed|tg.AttrBold, tg.ColorBlack|tg.AttrBold)
-				pos++
+			for _, v := range vertices {
+				// Rotate the point around X axis, then around Y axis, and finally around Z axis.
+				p = &v
+				p = p.RotateX(angleX)
+				p = p.RotateY(angleY)
+				p = p.RotateZ(angleZ)
+				if projection {
+					// Transform the point from 3D to 2D
+					p = p.Project(50, 50, 50, 50)
+				}
+				// Put the point in the list of transformed vertices
+				t = append(t, *p)
 			}
+
+			for _, f := range faces {
+				c.DrawLine(t[f[0]].x, t[f[0]].y, t[f[1]].x, t[f[1]].y)
+				c.DrawLine(t[f[1]].x, t[f[1]].y, t[f[2]].x, t[f[2]].y)
+				c.DrawLine(t[f[2]].x, t[f[2]].y, t[f[3]].x, t[f[3]].y)
+				c.DrawLine(t[f[3]].x, t[f[3]].y, t[f[0]].x, t[f[0]].y)
+			}
+
+			f := c.Frame(-40, -40, 80, 80)
+
+			xoffset := 2
+			for y, line := range strings.Split(f, "\n") {
+				pos := 0
+				for _, r := range line { // iterates over runes, not positions
+					tg.SetCell(xoffset+pos, y, r, tg.ColorRed|tg.AttrBold, tg.ColorBlack|tg.AttrBold)
+					pos++
+				}
+			}
+
+			tg.Flush()
+
+			angleX += 2.0
+			angleY += 3.0
+			angleZ += 5.0
+
+			c.Clear()
 		}
-
-		//stdscr.Refresh()
-		tg.Flush()
-
-		angleX += 2.0
-		angleY += 3.0
-		angleZ += 5.0
-
-		time.Sleep(50 * time.Millisecond)
-
-		c.Clear()
-
-		//tg.Clear(tg.ColorRed|tg.AttrBold, tg.ColorBlack|tg.AttrBold)
-
-		// TODO: Fork termbox and implement PeekEvent
-		//e := PeekEvent()
-		//switch e.Type {
-		//case EventKey:
-		//	switch e.Key {
-		//	case KeyEsc, KeyEnter, KeySpace:
-		//		return
-		//	}
-		//}
 	}
 }
 
