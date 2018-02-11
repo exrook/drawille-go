@@ -226,7 +226,7 @@ func Line(x1, y1, x2, y2 float64) []Point {
 // DrawLine draws a line onto the Canvas
 func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
 	for _, p := range Line(x1, y1, x2, y2) {
-		c.Toggle(p.X, p.Y)
+		c.Set(p.X, p.Y)
 	}
 }
 
