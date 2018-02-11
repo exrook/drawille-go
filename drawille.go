@@ -150,7 +150,7 @@ func (c Canvas) GetScreenCharacter(x, y int) rune {
 
 // Get character for the given pixel
 func (c Canvas) GetCharacter(x, y int) rune {
-	return c.GetScreenCharacter(x/4,y/4)
+	return c.GetScreenCharacter(x/4, y/4)
 }
 
 // Retrieve the rows from a given view
@@ -184,7 +184,12 @@ func (c Canvas) String() string {
 	return c.Frame(c.MinX(), c.MinY(), c.MaxX(), c.MaxY())
 }
 
-func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
+type Point struct {
+	X, Y int
+}
+
+// Line returns []Point where each Point is a dot in the line
+func Line(x1, y1, x2, y2 float64) []Point {
 	xdiff := math.Abs(x1 - x2)
 	ydiff := math.Abs(y2 - y1)
 
@@ -202,7 +207,9 @@ func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
 
 	r := math.Max(xdiff, ydiff)
 
-	for i := 0; i < round(r)+1; i = i + 1 {
+	points := make([]Point, round(r)+1)
+
+	for i := 0; i <= round(r); i++ {
 		x, y := x1, y1
 		if ydiff != 0 {
 			y += (float64(i) * ydiff) / (r * ydir)
@@ -210,7 +217,16 @@ func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
 		if xdiff != 0 {
 			x += (float64(i) * xdiff) / (r * xdir)
 		}
-		c.Toggle(round(x), round(y))
+		points[i] = Point{round(x), round(y)}
+	}
+
+	return points
+}
+
+// DrawLine draws a line onto the Canvas
+func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
+	for _, p := range Line(x1, y1, x2, y2) {
+		c.Toggle(p.X, p.Y)
 	}
 }
 
