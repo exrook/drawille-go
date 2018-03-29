@@ -150,7 +150,7 @@ func (c Canvas) GetScreenCharacter(x, y int) rune {
 
 // Get character for the given pixel
 func (c Canvas) GetCharacter(x, y int) rune {
-	return c.GetScreenCharacter(x/4,y/4)
+	return c.GetScreenCharacter(x/4, y/4)
 }
 
 // Retrieve the rows from a given view
@@ -184,11 +184,16 @@ func (c Canvas) String() string {
 	return c.Frame(c.MinX(), c.MinY(), c.MaxX(), c.MaxY())
 }
 
-func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
-	xdiff := math.Abs(x1 - x2)
-	ydiff := math.Abs(y2 - y1)
+type Point struct {
+	X, Y int
+}
 
-	var xdir, ydir float64
+// Line returns []Point where each Point is a dot in the line
+func Line(x1, y1, x2, y2 int) []Point {
+	xdiff := abs(x1 - x2)
+	ydiff := abs(y2 - y1)
+
+	var xdir, ydir int
 	if x1 <= x2 {
 		xdir = 1
 	} else {
@@ -200,17 +205,28 @@ func (c *Canvas) DrawLine(x1, y1, x2, y2 float64) {
 		ydir = -1
 	}
 
-	r := math.Max(xdiff, ydiff)
+	r := max(xdiff, ydiff)
 
-	for i := 0; i < round(r)+1; i = i + 1 {
+	points := make([]Point, r+1)
+
+	for i := 0; i <= r; i++ {
 		x, y := x1, y1
 		if ydiff != 0 {
-			y += (float64(i) * ydiff) / (r * ydir)
+			y += (i * ydiff) / (r * ydir)
 		}
 		if xdiff != 0 {
-			x += (float64(i) * xdiff) / (r * xdir)
+			x += (i * xdiff) / (r * xdir)
 		}
-		c.Toggle(round(x), round(y))
+		points[i] = Point{x, y}
+	}
+
+	return points
+}
+
+// DrawLine draws a line onto the Canvas
+func (c *Canvas) DrawLine(x1, y1, x2, y2 int) {
+	for _, p := range Line(x1, y1, x2, y2) {
+		c.Set(p.X, p.Y)
 	}
 }
 
@@ -220,10 +236,10 @@ func (c *Canvas) DrawPolygon(center_x, center_y, sides, radius float64) {
 		a := float64(n) * degree
 		b := float64(n+1) * degree
 
-		x1 := (center_x + (math.Cos(radians(a)) * (radius/2 + 1)))
-		y1 := (center_y + (math.Sin(radians(a)) * (radius/2 + 1)))
-		x2 := (center_x + (math.Cos(radians(b)) * (radius/2 + 1)))
-		y2 := (center_y + (math.Sin(radians(b)) * (radius/2 + 1)))
+		x1 := int(center_x + (math.Cos(radians(a)) * (radius/2 + 1)))
+		y1 := int(center_y + (math.Sin(radians(a)) * (radius/2 + 1)))
+		x2 := int(center_x + (math.Cos(radians(b)) * (radius/2 + 1)))
+		y2 := int(center_y + (math.Sin(radians(b)) * (radius/2 + 1)))
 
 		c.DrawLine(x1, y1, x2, y2)
 	}
@@ -235,4 +251,25 @@ func radians(d float64) float64 {
 
 func round(x float64) int {
 	return int(x + 0.5)
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return x * -1
+	}
+	return x
 }
